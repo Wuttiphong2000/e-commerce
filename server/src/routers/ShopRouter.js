@@ -58,6 +58,16 @@ shopRouter.get("/me/status", requireAuth, async (req, res) => {
   });
 });
 
+// ข้อมูลสาธารณะของร้าน
+shopRouter.get("/:slug", async (req, res) => {
+  const shop = await Seller.findOne({ slug: req.params.slug.toLowerCase() })
+    .select("name slug logoUrl bannerUrl description ratingAvg ratingCount status")
+    .lean();
+  if (!shop || shop.status !== "active")
+    return res.status(404).json({ success: false, message: "ไม่พบร้าน" });
+  res.json({ success: true, shop });
+});
+
 // สินค้าสาธารณะของร้านตาม slug
 shopRouter.get("/:slug/products", async (req, res) => {
   const shop = await Seller.findOne({ slug: req.params.slug.toLowerCase() }).lean();

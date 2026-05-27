@@ -9,6 +9,15 @@ import { AppError, catchAsync } from "../utils/error.js";
 const createToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
+const COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+const setAuthCookie = (res, token) => res.cookie("token", token, COOKIE_OPTS);
+
 export const register = catchAsync(async (req, res) => {
   let { firstname, middlename, lastname, username, email, password } = req.body;
   username = (username || "").trim().toLowerCase();
@@ -39,8 +48,9 @@ export const register = catchAsync(async (req, res) => {
   });
 
   const token = createToken(user._id);
+  setAuthCookie(res, token);
   const { password: _p, ...safe } = user.toObject();
-  res.json({ success: true, token, user: safe });
+  res.json({ success: true, user: safe });
 });
 
 export const login = catchAsync(async (req, res) => {
@@ -63,8 +73,15 @@ export const login = catchAsync(async (req, res) => {
   user.save().catch(() => {});
 
   const token = createToken(user._id);
+  setAuthCookie(res, token);
   const { password: _p, ...safe } = user.toObject();
-  res.json({ success: true, token, user: safe });
+  res.json({ success: true, user: safe });
+});
+
+// DELETE /api/users/session
+export const logout = catchAsync(async (req, res) => {
+  res.clearCookie("token", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict" });
+  res.json({ success: true, message: "ออกจากระบบแล้ว" });
 });
 
 export const deleteUser = catchAsync(async (req, res) => {
@@ -126,6 +143,33 @@ export const addToCart = catchAsync(async (req, res) => {
 
   await user.save();
   res.status(201).json({ success: true, items: user.cartdata });
+});
+
+// PATCH /api/users/cart/:itemId
+export const updateCartItem = catchAsync(async (req, res) => {
+  const { itemId } = req.params;
+  const qty = Number(req.body.quantity);
+  if (!qty || qty < 1) throw new AppError("quantity ต้องมากกว่า 0", 400);
+
+  const user = await User.findOneAndUpdate(
+    { _id: req.auth.userId, "cartdata._id": itemId },
+    { $set: { "cartdata.$.quantity": qty } },
+    { new: true }
+  ).lean();
+  if (!user) throw new AppError("ไม่พบสินค้าในตะกร้า", 404);
+  res.json({ success: true, items: user.cartdata });
+});
+
+// DELETE /api/users/cart/:itemId
+export const removeCartItem = catchAsync(async (req, res) => {
+  const { itemId } = req.params;
+  const user = await User.findByIdAndUpdate(
+    req.auth.userId,
+    { $pull: { cartdata: { _id: itemId } } },
+    { new: true }
+  ).lean();
+  if (!user) throw new AppError("ไม่พบผู้ใช้", 404);
+  res.json({ success: true, items: user.cartdata });
 });
 
 function assertValid(req) {

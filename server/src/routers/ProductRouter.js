@@ -6,13 +6,27 @@ import {
   getMyProducts,
   updateMyProduct,
   deleteMyProduct,
+  getProducts,
+  getProductBySlug,
 } from "../controllers/productController.js";
+import { getReviews, createReview } from "../controllers/reviewController.js";
 
 const productRouter = express.Router();
 
-productRouter.post("/", requireAuth, upload.single("image"), addProduct);
+// public
+productRouter.get("/", getProducts);
+
+// /me before /:slug to avoid conflict
 productRouter.get("/me", requireAuth, getMyProducts);
+productRouter.post("/", requireAuth, upload.single("image"), addProduct);
 productRouter.patch("/:id", requireAuth, updateMyProduct);
 productRouter.delete("/:id", requireAuth, deleteMyProduct);
+
+// public product detail
+productRouter.get("/:slug", getProductBySlug);
+
+// reviews
+productRouter.get("/:id/reviews", getReviews);
+productRouter.post("/:id/reviews", requireAuth, createReview);
 
 export default productRouter;

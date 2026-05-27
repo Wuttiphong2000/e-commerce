@@ -8,6 +8,7 @@ import userRouter from "./routers/UserRouter.js";
 import shopRouter from "./routers/ShopRouter.js";
 import productRouter from "./routers/ProductRouter.js";
 import adminRouter from "./routers/AdminRouter.js";
+import orderRouter from "./routers/OrderRouter.js";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
@@ -23,6 +24,7 @@ app.get("/", (_req, res) => res.send("API is working"));
 app.use("/api/users", userRouter);
 app.use("/api/shops", shopRouter);
 app.use("/api/products", productRouter);
+app.use("/api/orders", orderRouter);
 app.use("/api/admin", adminRouter);
 
 // Error middleware

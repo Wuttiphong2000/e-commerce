@@ -40,8 +40,10 @@ export function errorHandler(err, req, res, _next) {
     status = err.statusCode;
   }
 
-  if (!isProd) console.error("❌ ERROR:", err);
-  else console.error("❌ ERROR:", { message: err.message, status, name: err.name });
+  if (status >= 500) {
+    if (!isProd) console.error("❌ ERROR:", err);
+    else console.error("❌ ERROR:", { message: err.message, status, name: err.name });
+  }
 
   return res.status(status).json({
     success: false,

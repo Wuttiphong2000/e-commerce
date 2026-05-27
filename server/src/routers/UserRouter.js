@@ -2,10 +2,13 @@ import express from "express";
 import {
   register,
   login,
+  logout,
   deleteUser,
   deleteMe,
   getMyCart,
   addToCart,
+  updateCartItem,
+  removeCartItem,
   updateMe,
   changePassword,
   getAddresses,
@@ -36,8 +39,12 @@ userRouter.get("/ping", optionalAuth, (req, res) => {
   res.json({ success: true, auth: req.auth ?? null, message: "pong" });
 });
 
+userRouter.delete("/session", requireAuth, logout);
+
 userRouter.get("/cart", requireAuth, getMyCart);
 userRouter.post("/cart", requireAuth, addToCart);
+userRouter.patch("/cart/:itemId", requireAuth, updateCartItem);
+userRouter.delete("/cart/:itemId", requireAuth, removeCartItem);
 
 // โปรไฟล์
 userRouter.patch(
